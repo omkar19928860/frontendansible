@@ -1,10 +1,9 @@
 
 trigger: none
 
-# pool:
-#   name: dev
 pool:
-  vmImage: ubuntu-latest
+  name: dev
+
 resources:
   repositories:
     - repository: ansibleRepo
@@ -109,33 +108,32 @@ stages:
     steps:
     - checkout: ansibleRepo
 
-    - script: |
-        echo "Installing Ansible..."
-        sudo apt-get update -y
-        sudo apt-get install -y ansible
-        ansible --version
-      displayName: Install Ansible
+    - task: CmdLine@2
+      inputs:
+        script: |
+          wsl --list
+          wsl ansible --version
+    - task: CmdLine@2
+      inputs:
+        script: 'wsl ansible-playbook playbooks/build.yml'
 
-    - script: |
-        echo "Running Ansible Build Playbook"
-        ansible-playbook playbooks/build.yml
-      displayName: Run Ansible Build
 
-# ================= DEPLOY STAGE =================
-- stage: Deploy
-  displayName: Deploy using Ansible
-  dependsOn: Build
-  condition: succeeded()
-  jobs:
-  - job: DeployJob
-    displayName: Ansible Deploy
-    steps:
-    - checkout: ansibleRepo
+#  ================= DEPLOY STAGE =================
+# - stage: Deploy
+#   displayName: Deploy using Ansible (WSL)
+#   dependsOn: Build
+#   condition: succeeded()
+#   jobs:
+#   - job: DeployJob
+#     displayName: Ansible Deploy via WSL
+#     steps:
+#     - checkout: ansibleRepo
 
-    - script: |
-        echo "Running Ansible Deploy Playbook"
-        ansible-playbook playbooks/deploy.yml
-      displayName: Run Ansible Deploy
+#     - task: CommandLine@2
+#       displayName: Run Ansible Deploy (WSL)
+#       inputs:
+#         script: |
+#           wsl ansible-playbook playbooks/deploy.yml
 
     
     
