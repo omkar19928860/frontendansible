@@ -1,8 +1,10 @@
 
 trigger: none
 
+# pool:
+#   name: dev
 pool:
-  name: dev
+  vmImage: ubuntu-latest
 resources:
   repositories:
     - repository: ansibleRepo
