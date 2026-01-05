@@ -109,17 +109,20 @@ stages:
     - checkout: ansibleRepo
 
     - task: CmdLine@2
+      displayName: Verify WSL & Ansible
       inputs:
         script: |
           wsl --list
           wsl ansible --version
+
     - task: CmdLine@2
+      displayName: Run Ansible Build (WSL)
       inputs:
-        script: |
-          wsl bash -lc "
-                      cd /mnt/c$(Build.SourcesDirectory) &&
-                      export ANSIBLE_ROLES_PATH=roles &&
-                      ansible-playbook -i inventories/dev.ini playbooks/build.yml"
+        script: >
+          wsl bash -lc "cd /mnt/c$(Build.SourcesDirectory) &&
+          export ANSIBLE_ROLES_PATH=roles &&
+          ansible-playbook -i inventories/dev.ini playbooks/build.yml"
+
                     
                 
 
