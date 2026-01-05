@@ -1,0 +1,172 @@
+trigger: none
+
+pool:
+  name: dev
+
+stages:
+# - stage: Scanning
+#   displayName: SonarQube Scan
+#   jobs:
+#   - job: staticAnalysis
+#     displayName: Static Analysis (SonarQube)
+#     steps:
+#     - task: PowerShell@2
+#       displayName: Run SonarScanner
+#       inputs:
+#         targetType: 'inline'
+#         script: |
+#           Write-Host "Running SonarScanner..."
+
+#           cd "$(Build.SourcesDirectory)/ReactTodoUIMonolith"
+
+#           & "C:\sonar-scanner\bin\sonar-scanner.bat" `
+#           "-Dsonar.projectKey=TodoPipeline" `
+#           "-Dsonar.projectName=Todo Pipeline" `
+#           "-Dsonar.sources=src" `
+#           "-Dsonar.exclusions=**/node_modules/**,**/build/**" `
+#           "-Dsonar.host.url=http://98.70.25.150:9000" `
+#           "-Dsonar.token=squ_1afe82cc734faf915e54a5d5d2f2f441669cbc17"
+
+- stage: Scanning2
+  displayName: CSS SCAN
+  jobs:
+  - job: staticAnalysis
+    displayName: CSS SCAN (biome)
+    steps:
+    - task: PowerShell@2
+      displayName: biomelinter
+      continueOnError: true
+      inputs:
+        targetType: inline
+        workingDirectory: '$(Build.SourcesDirectory)/ReactTodoUIMonolith'
+        script: |
+          npm.cmd install --save-dev --save-exact @biomejs/biome
+          npx.cmd biome --version
+          npx.cmd biome lint src 
+- stage: Readme
+  displayName: Readme linter(markdown)
+  jobs:
+  - job: Readme
+    displayName: Readme Linter
+    steps:
+          
+    - task: PowerShell@2
+      continueOnError: true
+      displayName: Lint Markdown(markdownlint)      
+      inputs:
+       targetType: 'inline'
+       script: |
+        npm.cmd install -g markdownlint-cli      
+        markdownlint $(System.DefaultWorkingDirectory)/ReactTodoUIMonolith
+
+- stage: yamllinter
+  displayName: Yaml Scan
+  jobs:
+  - job: Yaml
+    displayName: Yaml Scan
+    steps:
+    - task: PowerShell@2
+      displayName: Lint YAML (yamllint)
+      inputs:
+       targetType: 'inline'
+       script: |
+        $PYTHON="C:\Users\OMKAR SINGH\AppData\Local\Programs\Python\Python312\python.exe"
+
+        & $PYTHON --version
+        & $PYTHON -m pip install --upgrade pip
+        & $PYTHON -m pip install yamllint
+- stage: CSSinter
+  displayName: CSS linter(stylelint)
+  jobs:
+  - job: CSSinter
+    displayName: CSS linter(stylelint)
+    steps:
+    - task: PowerShell@2
+      continueOnError: true
+      displayName: Lint CSS(Styelint)  
+      inputs:
+       targetType: 'inline'
+       workingDirectory: '$(Build.SourcesDirectory)/ReactTodoUIMonolith/src'
+       script: |
+        npm.cmd install -g stylelint
+        npm.cmd install --save-dev stylelint stylelint-config-standard
+        npx.cmd stylelint "**/*.css"
+- stage: BuildAndPackage
+  displayName: Build & Artifact Packaging
+  jobs:
+  - job: ApplicationBuild
+    displayName: Application Build
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSource: 'spec'
+        versionSpec: '16.x'
+    - task: Npm@1
+      inputs:
+        command: 'install'
+        workingDir: 'ReactTodoUIMonolith'
+
+    - task: Npm@1
+      inputs:
+        command: 'custom'
+        workingDir: 'ReactTodoUIMonolith'
+        customCommand: 'run build'
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: 'ReactTodoUIMonolith/build/'
+        artifact: 'todo-ui'
+        publishLocation: 'pipeline'
+
+- stage: deployToDev
+  displayName: Deploy To Dev VM
+  jobs:
+  - job: deploy
+    steps:
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        buildType: 'current'
+        artifactName: 'todo-ui'
+        targetPath: '$(System.DefaultWorkingDirectory)/build_artifacts'
+    - task: CopyFilesOverSSH@0
+      inputs:
+        sshEndpoint: 'vmservice'
+        sourceFolder: '$(System.DefaultWorkingDirectory)/build_artifacts'
+        contents: '**'
+        targetFolder: '/home/adminuser/'
+        readyTimeout: '20000'
+
+    - task: SSH@0
+      displayName: Install Nginx
+      inputs:
+       sshEndpoint: 'vmservice'
+       runOptions: 'commands'
+       commands: |
+        sudo apt-get update -y
+        sudo apt-get install -y nginx
+        sudo cp -r /home/adminuser/* /var/www/html
+       readyTimeout: '20000'
+
+    
+    
+
+
+    
+
+    # - task: CopyFilesOverSSH@0
+    #   inputs:
+    #     sshEndpoint: 'dev-vm'
+    #     sourceFolder: '$(System.DefaultWorkingDirectory)/build_artifacts'
+    #     contents: '**'
+    #     targetFolder: '/home/devopsadmin/'
+    #     cleanTargetFolder: true
+    #     readyTimeout: '20000'
+
+    # - task: SSH@0
+    #   inputs:
+    #     sshEndpoint: 'dev-vm'
+    #     runOptions: 'commands'
+    #     commands: 'sudo cp -r /home/devopsadmin/* /var/www/html'
+    #     readyTimeout: '20000'
+
+      
+    
