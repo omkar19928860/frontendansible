@@ -1,0 +1,147 @@
+trigger: none
+
+pool:
+  name: dev
+
+resources:
+  repositories:
+    - repository: ansibleRepo
+      type: github
+      name: omkar19928860/ansible-app-deploy
+      ref: main
+      endpoint: terraform-cloud-lab
+
+stages:
+# =====================================================
+# STAGE 1 : CODE QUALITY – LINTING
+# =====================================================
+- stage: CodeQualityLinting
+  displayName: Code Quality Checks – Linting
+  jobs:
+
+  - job: BiomeCssLint
+    displayName: Biome CSS Linting
+    steps:
+    - task: PowerShell@2
+      displayName: Execute Biome Linter
+      continueOnError: true
+      inputs:
+        targetType: inline
+        workingDirectory: '$(Build.SourcesDirectory)/ReactTodoUIMonolith'
+        script: |
+          npm.cmd install --save-dev --save-exact @biomejs/biome
+          npx.cmd biome --version
+          npx.cmd biome lint src
+
+  - job: MarkdownLinting
+    displayName: Markdown Linting (README)
+    steps:
+    - task: PowerShell@2
+      continueOnError: true
+      displayName: Execute Markdown Linter
+      inputs:
+        targetType: 'inline'
+        script: |
+          npm.cmd install -g markdownlint-cli
+          markdownlint $(System.DefaultWorkingDirectory)/ReactTodoUIMonolith
+
+  - job: YamlLinting
+    displayName: YAML Linting (yamllint)
+    steps:
+    - task: PowerShell@2
+      displayName: Execute YAML Linter
+      inputs:
+        targetType: 'inline'
+        script: |
+          $PYTHON="C:\Users\OMKAR SINGH\AppData\Local\Programs\Python\Python312\python.exe"
+          & $PYTHON --version
+          & $PYTHON -m pip install --upgrade pip
+          & $PYTHON -m pip install yamllint
+
+  - job: StylelintCssLint
+    displayName: Stylelint CSS Linting
+    steps:
+    - task: PowerShell@2
+      continueOnError: true
+      displayName: Execute Stylelint
+      inputs:
+        targetType: 'inline'
+        workingDirectory: '$(Build.SourcesDirectory)/ReactTodoUIMonolith/src'
+        script: |
+          npm.cmd install -g stylelint
+          npm.cmd install --save-dev stylelint stylelint-config-standard
+          npx.cmd stylelint "**/*.css"
+
+# =====================================================
+# STAGE 2 : STATIC CODE ANALYSIS
+# =====================================================
+- stage: StaticCodeAnalysis
+  displayName: Static Code Analysis – SonarQube
+  jobs:
+  - job: SonarQubeAnalysis
+    displayName: SonarQube Static Analysis
+    steps:
+    - task: PowerShell@2
+      displayName: Execute SonarQube Scanner
+      inputs:
+        targetType: 'inline'
+        script: |
+          Write-Host "Running SonarScanner..."
+
+          cd "$(Build.SourcesDirectory)\ReactTodoUIMonolith"
+
+          & "C:\sonar-scanner\bin\sonar-scanner.bat" `
+          "-Dsonar.projectKey=react-todo-ui-prod" `
+          "-Dsonar.projectName=ReactTodoUI-prod" `
+          "-Dsonar.sources=src" `
+          "-Dsonar.exclusions=**/node_modules/**,**/build/**" `
+          "-Dsonar.host.url=http://4.247.151.173:9000" `
+          "-Dsonar.login=sqa_b49321cb1e16935d499aa63338892df67fd08ee2" `
+          "-Dsonar.scanner.forceReloadAll=true"
+
+# =====================================================
+# STAGE 3 : BUILD
+# =====================================================
+- stage: ApplicationBuild
+  displayName: Application Build (Ansible)
+  jobs:
+  - job: AnsibleBuild
+    displayName: Ansible Application Build
+    steps:
+    - checkout: ansibleRepo
+
+    - task: CmdLine@2
+      displayName: Validate WSL & Ansible Environment
+      inputs:
+        script: |
+          wsl --list
+          wsl ansible --version
+
+    - task: CmdLine@2
+      displayName: Run Ansible Build Playbook
+      inputs:
+        script: >
+          wsl bash -lc "cd \"$(wslpath '$(Build.SourcesDirectory)')\" &&
+          export ANSIBLE_ROLES_PATH=roles &&
+          ansible-playbook -i inventories/dev.ini playbooks/build.yml"
+
+# =====================================================
+# STAGE 4 : DEPLOY
+# =====================================================
+- stage: ApplicationDeployment
+  displayName: Application Deployment (Ansible)
+  dependsOn: ApplicationBuild
+  condition: succeeded()
+  jobs:
+  - job: AnsibleDeployment
+    displayName: Ansible Application Deployment
+    steps:
+    - checkout: ansibleRepo
+
+    - task: CmdLine@2
+      displayName: Run Ansible Deploy Playbook
+      inputs:
+        script: >
+          wsl bash -lc "cd \"$(wslpath '$(Build.SourcesDirectory)')\" &&
+          export ANSIBLE_ROLES_PATH=roles &&
+          ansible-playbook -i inventories/dev.ini playbooks/deploy.yml"
