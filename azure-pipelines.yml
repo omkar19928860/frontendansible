@@ -122,6 +122,24 @@ stages:
           wsl bash -lc "cd \"$(wslpath '$(Build.SourcesDirectory)')\" &&
           export ANSIBLE_ROLES_PATH=roles &&
           ansible-playbook -i inventories/dev.ini playbooks/build.yml"
+- stage: Deploy
+  displayName: Deploy using Ansible (WSL)
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - job: DeployJob
+    displayName: Ansible Deploy
+    steps:
+    - checkout: ansibleRepo
+
+    - task: CmdLine@2
+      displayName: Run Ansible Deploy (WSL)
+      inputs:
+        script: >
+          wsl bash -lc "cd \"$(wslpath '$(Build.SourcesDirectory)')\" &&
+          export ANSIBLE_ROLES_PATH=roles &&
+          ansible-playbook -i inventories/dev.ini playbooks/deploy.yml"
+
 
 
                     
