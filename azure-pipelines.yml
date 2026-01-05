@@ -86,16 +86,17 @@ stages:
         script: |
           Write-Host "Running SonarScanner..."
 
-          cd "$(Build.SourcesDirectory)/ReactTodoUIMonolith"
+          cd "$(Build.SourcesDirectory)\ReactTodoUIMonolith"
 
-          & "C:\sonar-scanner\bin\sonar-scanner.bat" `
-          "-Dsonar.projectKey=react-todo-ui" `
-          "-Dsonar.projectName=React Todo UI" `
-          "-Dsonar.sources=src" `
-          "-Dsonar.exclusions=**/node_modules/**,**/build/**" `
-          "-Dsonar.host.url=http://4.247.151.173:9000" `
-          "-Dsonar.login=sqa_b49321cb1e16935d499aa63338892df67fd08ee2"
-          "
+          C:\sonar-scanner\bin\sonar-scanner.bat ^
+          -Dsonar.projectKey=react-todo-ui ^
+          -Dsonar.projectName="React Todo UI" ^
+          -Dsonar.sources=src ^
+          -Dsonar.exclusions=**/node_modules/**,**/build/** ^
+          -Dsonar.host.url=http://4.247.151.173:9000 ^
+          -Dsonar.login=sqa_b49321cb1e16935d499aa63338892df67fd08ee2
+
+        
 
 
 # =====================================================
