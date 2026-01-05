@@ -89,8 +89,8 @@ stages:
           cd "$(Build.SourcesDirectory)\ReactTodoUIMonolith"
 
           & "C:\sonar-scanner\bin\sonar-scanner.bat" `
-          "-Dsonar.projectKey=react-todo-ui" `
-          "-Dsonar.projectName=ReactTodoUI" `
+          "-Dsonar.projectKey=react-todo-ui-prod" `
+          "-Dsonar.projectName=ReactTodoUI-prod" `
           "-Dsonar.sources=src" `
           "-Dsonar.exclusions=**/node_modules/**,**/build/**" `
           "-Dsonar.host.url=http://4.247.151.173:9000" `
