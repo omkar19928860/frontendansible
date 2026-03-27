@@ -6,21 +6,24 @@ pool:
   name: dev
   demands:
     - Agent.Name -equals omkaragent
-variables:
-- group: keyvaultlink
+
 
 
 
 steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+- task: AzureKeyVault@2
+  inputs:
+    azureSubscription: 'omkarsc'
+    KeyVaultName: 'omkarkeyvault234'
+    SecretsFilter: '*'
+    RunAsPreJob: true
+- script: 
+   echo $(dbpassword)
 
-- script: |
-    - script: |
-    echo "Length:"
-    echo ${#dbpassword}
+   
 
-    echo $(dbuser)
+
+  
 
   
 
