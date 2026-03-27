@@ -16,7 +16,7 @@ steps:
   displayName: 'Run a one-line script'
 
 - script: |
-    echo $(dbuser)
+    echo $(dbuser) | cut -c1-3
     echo $(dbpassword)
 
   
