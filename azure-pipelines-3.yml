@@ -1,0 +1,24 @@
+
+trigger:
+- main
+
+pool:
+  name: dev
+  demands:
+    - Agent.Name -equals omkaragent
+variables:
+- group: keyvaultlink
+
+
+
+steps:
+- script: echo Hello, world!
+  displayName: 'Run a one-line script'
+
+- script: |
+    echo $(dbuser)
+    echo $(dbpassword)
+
+  
+
+
