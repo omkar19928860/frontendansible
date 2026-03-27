@@ -16,8 +16,11 @@ steps:
   displayName: 'Run a one-line script'
 
 - script: |
-    echo $(dbuser) | cut -c1-3
-    echo $(dbpassword)
+    - script: |
+    echo "Length:"
+    echo ${#dbpassword}
+
+    echo $(dbuser)
 
   
 
